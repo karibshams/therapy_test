@@ -1,98 +1,138 @@
-Emothrive AI Therapy Chatbot
-An AI-powered conversational therapist designed to provide compassionate, evidence-based support using advanced natural language processing and clinical knowledge from curated therapy PDFs.
+Here’s a polished and beautifully formatted version of your project description for **Emothrive AI Therapy Chatbot** — ideal for your README or documentation:
 
-Project Overview
-Emothrive AI is a multi-modal, RAG-enabled chatbot that integrates:
+---
 
-Multi-therapy approaches: CBT (Cognitive Behavioral Therapy), DBT (Dialectical Behavior Therapy), ACT (Acceptance and Commitment Therapy), and others.
+# 🌿 Emothrive AI Therapy Chatbot
 
-PDF Knowledge Integration: Uses document embeddings and FAISS vector store to augment AI responses with information extracted from clinical therapy PDFs.
+**Emothrive AI** is a compassionate, AI-powered conversational therapist designed to provide supportive, evidence-based mental health guidance. Leveraging advanced NLP and clinical knowledge extracted from curated therapy PDFs, Emothrive is your AI companion for mental wellness.
 
-Contextual Therapy: Automatically detects therapy themes like anxiety, grief, parenting, and adapts responses with empathy and practical coping strategies.
+---
 
-Streamlit-based Web Interface: A friendly chat UI for continuous conversational therapy sessions.
+## 🧠 Project Overview
 
-Features
-Dynamic therapy style detection: No need to manually select therapy type; AI infers from user input.
+Emothrive AI is a multi-modal, RAG-enabled (Retrieval-Augmented Generation) chatbot that integrates:
 
-RAG-powered responses: AI incorporates real clinical knowledge from PDFs to provide accurate, relevant answers.
+* ✅ **Therapeutic Approaches**:
+  Cognitive Behavioral Therapy (CBT), Dialectical Behavioral Therapy (DBT), Acceptance and Commitment Therapy (ACT), and more.
 
-Multi-session conversation memory: Maintains chat history for context continuity.
+* 📄 **PDF Knowledge Integration**:
+  Learns from clinical PDFs using FAISS vector store and embeddings for accurate, context-rich responses.
 
-OpenAI GPT-4.1-mini integration: Uses powerful language models for rich, human-like interaction.
+* 🧘‍♀️ **Contextual Therapy Awareness**:
+  Detects therapy themes like anxiety, grief, parenting, trauma, and adapts support strategies with empathy.
 
-Self-managing vector store: Automatically extracts, chunks, embeds PDFs and saves vector index locally.
+* 🖥️ **Streamlit-Based UI**:
+  Clean and interactive web interface for engaging therapy sessions.
 
-Secure configuration: Uses .env file to store API keys and settings.
+---
 
-Installation
-Clone this repository:
+## ✨ Key Features
 
-bash
-Copy
+* 🎭 **Dynamic Therapy Detection**
+  Automatically identifies therapy type from user input — no manual selection needed.
+
+* 📚 **RAG-Powered Replies**
+  Enriches responses using real clinical knowledge embedded from PDFs.
+
+* 🔁 **Session Memory**
+  Maintains context across conversations for a natural and connected chat flow.
+
+* 🤖 **GPT-4.1-mini Integration**
+  Utilizes OpenAI's compact yet powerful model for human-like interaction.
+
+* 📂 **Self-Managing Vector Store**
+  Auto-extracts, chunks, embeds PDFs, and creates vector index using FAISS.
+
+* 🔐 **Secure Configuration**
+  All sensitive data managed securely via `.env` files.
+
+---
+
+## 🚀 Installation
+
+Clone the repository:
+
+```bash
 git clone https://github.com/yourusername/therapy_test.git
 cd therapy_test
-Create and activate a Python virtual environment:
+```
 
-bash
-Copy
+Create and activate a virtual environment:
+
+```bash
 python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-.\.venv\Scripts\activate   # Windows
+source .venv/bin/activate   # For Linux/macOS
+.venv\Scripts\activate      # For Windows
+```
+
 Install dependencies:
 
-bash
-Copy
+```bash
 pip install -r requirements.txt
-Add your OpenAI API key to a .env file in the root directory:
+```
 
-ini
-Copy
+Add your OpenAI API key to a `.env` file:
+
+```ini
 OPENAI_API_KEY=your_openai_api_key_here
-Place your therapy PDFs in the pdf/ folder.
+```
 
-Usage
+Place your therapy PDFs in the `pdf/` folder.
+
+---
+
+## 🧪 Usage
+
 Run the Streamlit app:
 
-bash
-Copy
+```bash
 streamlit run test.py
-Open your browser at http://localhost:8501 and start chatting with Emothrive AI.
+```
 
-Project Structure
-main.py: Core AI logic and vector store initialization.
+Then open your browser at:
+[http://localhost:8501](http://localhost:8501)
 
-pdf_processor.py: PDF text extraction, chunking, embedding, and vector store management.
+Start your conversation with **Emothrive AI** and explore mental wellness through intelligent, empathetic dialogue.
 
-prompt.py: Prompt management and therapy style detection logic.
+---
 
-test.py: Streamlit UI and chat interface.
+## 🗂️ Project Structure
 
-pdf/: Therapy PDFs for knowledge base.
+| File/Folder        | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `main.py`          | Core AI logic and vector store initialization         |
+| `pdf_processor.py` | PDF processing, chunking, embedding, FAISS management |
+| `prompt.py`        | Prompt creation and dynamic therapy style logic       |
+| `test.py`          | Streamlit UI interface                                |
+| `pdf/`             | Folder for clinical therapy PDFs                      |
+| `vector_store/`    | Auto-generated vector index (Git ignored)             |
+| `.env`             | Environment variables (API keys, configs)             |
 
-vector_store/: Auto-generated vector embeddings and FAISS index (ignored by git).
+---
 
-.env: Environment variables including OpenAI API key (ignored by git).
+## 🤝 Contributing
 
-Contributing
-Contributions are welcome! Please:
+We welcome contributions!
+Please feel free to:
 
-Open issues for bugs or feature requests.
+* Open issues for bugs, feedback, or feature requests.
+* Submit PRs with clear and concise changes.
+* Keep all API keys and sensitive information **out of commits**.
 
-Submit pull requests with clear descriptions.
+---
 
-Keep API keys and sensitive data out of commits.
+## 📜 License
 
-License
-MIT License © 2025 Your Name
+MIT License
+© 2025 Your Name
 
-Acknowledgements
-OpenAI for GPT API
+---
 
-LangChain for vector store and prompt tools
+## 🙏 Acknowledgements
 
-Sentence Transformers for embeddings
-
-Streamlit for web UI
+* [OpenAI](https://openai.com/) for GPT-4.1-mini
+* [LangChain](https://www.langchain.com/) for vector store and prompt tools
+* [Sentence Transformers](https://www.sbert.net/) for embeddings
+* [Streamlit](https://streamlit.io/) for UI framework
 
 
