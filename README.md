@@ -1,6 +1,3 @@
-Here’s a polished and beautifully formatted version of your project description for **Emothrive AI Therapy Chatbot** — ideal for your README or documentation:
-
----
 
 # 🌿 Emothrive AI Therapy Chatbot
 
