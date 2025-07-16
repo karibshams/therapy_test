@@ -2,7 +2,6 @@ import os
 import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
-
 import PyPDF2
 from pdfplumber import PDF
 
