@@ -49,12 +49,15 @@ def main():
         response = loop.run_until_complete(get_ai_response(user_input))
 
         if response.get("success"):
+            # Process response
+            response_text = response["response"]["text"]
             st.session_state.conversation_history.append({
                 "role": "assistant",
-                "content": response["response"]["text"],
+                "content": response_text,
                 "timestamp": datetime.now()
             })
 
+        # Display conversation history
         for msg in st.session_state.conversation_history:
             if msg["role"] == "user":
                 st.markdown(f"<div style='text-align: right; background:#DCF8C6; padding:10px; margin:5px; border-radius:10px;'>**You:** {msg['content']}</div>", unsafe_allow_html=True)
