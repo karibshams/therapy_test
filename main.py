@@ -92,7 +92,7 @@ class EmothriveAI:
             )
             response_text = response.choices[0].message.content
 
-            # Ensure the response is within the 40-60 word limit
+            # Ensure the response is within the 40-60 word limit and does not get cut off mid-sentence
             response_text = self.prompt_manager.ensure_response_length(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
