@@ -18,6 +18,12 @@ class ConversationStyle(Enum):
     EMPATHETIC = "empathetic"
     MOTIVATIONAL = "motivational"
     GENTLE = "gentle"
+    NON_JUDGMENTAL = "non-judgmental"
+    SUPPORTIVE = "supportive"
+    REFLECTIVE = "reflective"
+    EMPOWERING = "empowering"
+    CURIOUS = "curious"
+    SOLUTION_FOCUSED = "solution-focused"
 
 class PromptManager:
     def __init__(self, 
@@ -27,7 +33,14 @@ class PromptManager:
         self.conversation_style = conversation_style
 
     def detect_therapy_type(self, user_input: str) -> TherapyType:
+        # Automatically detects therapy type from the user's input
         text = user_input.lower()
+        if any(k in text for k in ["cognitive behavioral therapy", "cbt"]):
+            return TherapyType.CBT
+        if any(k in text for k in ["dialectical behavior therapy", "dbt"]):
+            return TherapyType.DBT
+        if any(k in text for k in ["acceptance and commitment therapy", "act"]):
+            return TherapyType.ACT
         if any(k in text for k in ["grief", "loss", "bereavement"]):
             return TherapyType.GRIEF
         if any(k in text for k in ["anxiety", "panic", "worried"]):
@@ -36,33 +49,27 @@ class PromptManager:
             return TherapyType.PARENTING
         if any(k in text for k in ["depress", "sad", "hopeless"]):
             return TherapyType.DEPRESSION
+        if any(k in text for k in ["trauma", "trauma-informed"]):
+            return TherapyType.TRAUMA
         return self.default_therapy_type
 
     def generate_system_prompt(self, 
                                therapy_type: TherapyType,
                                pdf_context: str = "") -> str:
+        # Generate system prompt dynamically based on the detected therapy type
         prompt = f"""
-You are an experienced AI therapist specializing in {therapy_type.value}. 
-
-Your approach combines Cognitive Behavioral Therapy (CBT), Dialectical Behavior Therapy (DBT), and Acceptance and Commitment Therapy (ACT). 
-Respond in a warm, compassionate, and professional therapist tone. 
-
-Use the following clinical knowledge extracted from documents to inform your responses when relevant:
-{pdf_context}
-
-Provide a detailed, session-style reply resembling a live therapy session — 
-engage with the user’s feelings, thoughts, and behaviors; 
-offer insights and therapeutic techniques; 
-use examples and ask reflective questions as appropriate.
-
-Be supportive, patient, and focus on practical coping strategies and problem solving.
-"""
+        You are an experienced AI therapist specializing in {therapy_type.value}. 
+        Use the following clinical knowledge extracted from documents to inform your responses when relevant:
+        {pdf_context}
+        Respond with therapeutic insights and techniques, always keeping the user's wellbeing in focus.
+        """
         return prompt.strip()
 
     def create_conversation_messages(self, 
                                      user_input: str,
                                      pdf_context: str = "",
                                      conversation_history: List[Dict] = None) -> List[Dict]:
+        # Detect therapy type from user input
         therapy_type = self.detect_therapy_type(user_input)
         system_prompt = self.generate_system_prompt(therapy_type, pdf_context)
         messages = [{"role": "system", "content": system_prompt}]
@@ -73,3 +80,12 @@ Be supportive, patient, and focus on practical coping strategies and problem sol
         messages.append({"role": "user", "content": user_input})
         
         return messages
+
+    def ensure_response_length(self, response: str) -> str:
+        # Ensure the response is between 40-60 words
+        words = response.split()
+        if len(words) > 60:
+            response = ' '.join(words[:60])  # Truncate if more than 60 words
+        elif len(words) < 40:
+            response += " (Response truncated. Please elaborate for a more detailed answer.)"
+        return response
