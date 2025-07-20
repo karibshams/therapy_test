@@ -64,6 +64,14 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
         
+        # Wait for the client to provide more context if the message seems incomplete
+        if self.session_data['messages_count'] > 0 and user_message:
+            # Check if the message contains enough context, else ask for more details
+            if len(user_message.split()) < 10:  # Example condition to ask for more context
+                response_text = "I hear that you're feeling this way. Could you tell me more about the situations or experiences that have led you to feel this way?"
+                return {"success": True, "response": {"text": response_text}}
+
+        # Use PDF context for further response
         pdf_context = ""
         if self.pdf_store and self.pdf_store.vector_store:
             pdf_context = self.pdf_store.retrieve_pdf_context(user_message)
@@ -83,6 +91,9 @@ class EmothriveAI:
                 max_tokens=300
             )
             response_text = response.choices[0].message.content
+
+            # Ensure the response is within the 40-60 word limit
+            response_text = self.prompt_manager.ensure_response_length(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
             self.conversation_history.append({"role": "assistant", "content": response_text})

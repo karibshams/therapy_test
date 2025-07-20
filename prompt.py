@@ -84,8 +84,8 @@ class PromptManager:
     def ensure_response_length(self, response: str) -> str:
         # Ensure the response is between 40-60 words
         words = response.split()
-        if len(words) > 60:
-            response = ' '.join(words[:60])  # Truncate if more than 60 words
-        elif len(words) < 40:
+        if len(words) > 70: 
+            response = ' '.join(words[:70])  # Truncate if more than 70 words 
+        elif len(words) < 50: 
             response += " (Response truncated. Please elaborate for a more detailed answer.)"
         return response
