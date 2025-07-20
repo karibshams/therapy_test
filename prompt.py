@@ -1,5 +1,6 @@
 from typing import Dict, List
 from enum import Enum
+import re
 
 class TherapyType(Enum):
     CBT = "Cognitive Behavioral Therapy"
@@ -82,10 +83,15 @@ class PromptManager:
         return messages
 
     def ensure_response_length(self, response: str) -> str:
-        # Ensure the response is between 40-60 words
-        words = response.split()
-        if len(words) > 70: 
-            response = ' '.join(words[:70])  # Truncate if more than 70 words 
-        elif len(words) < 50: 
+        # Split into sentences
+        sentences = re.split(r'(?<=[.!?]) +', response)
+        
+        # If the response is too long, truncate at the sentence level
+        if len(sentences) > 3:  # Adjust this value based on the max sentence limit you'd like
+            response = ' '.join(sentences[:3])  # Keep the first 3 sentences
+        
+        # If the response is still too short, add an informational message
+        elif len(response.split()) < 50:
             response += " (Response truncated. Please elaborate for a more detailed answer.)"
+        
         return response
