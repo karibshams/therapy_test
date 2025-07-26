@@ -64,7 +64,7 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
         
-        # Simple inquiries with short responses
+        
         simple_responses = {
             "how are you?": "I'm here and ready to help. How are you feeling today?",
             "please find me a girlfriend": "Building connections takes time, but I'm here to guide you. How do you feel about trying new social activities?",
@@ -72,19 +72,19 @@ class EmothriveAI:
             "hi": "Hello! How can I support you today?"
         }
         
-        # Check if the message is simple and provide a short reply
+     
         if user_message.lower() in simple_responses:
             return {"success": True, "response": {"text": simple_responses[user_message.lower()]}}
         
-        # If the message is longer or more complex, ask for more details or provide an expanded answer
+      
         if self.session_data['messages_count'] > 0 and user_message:
-            if len(user_message.split()) < 10:  # Example condition for asking more details
+            if len(user_message.split()) < 10:  
                 response_text = (
                     "It sounds like you're going through something important. Could you share more about how you're feeling or what challenges you're facing? I'm here to help."
                 )
                 return {"success": True, "response": {"text": response_text}}
 
-        # Use PDF context for further response
+        
         pdf_context = ""
         if self.pdf_store and self.pdf_store.vector_store:
             pdf_context = self.pdf_store.retrieve_pdf_context(user_message)
@@ -105,7 +105,7 @@ class EmothriveAI:
             )
             response_text = response.choices[0].message.content
 
-            # Apply more natural, supportive, and warmer tone here
+           
             response_text = self._make_warm_and_supportive(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
