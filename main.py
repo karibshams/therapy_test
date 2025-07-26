@@ -64,11 +64,12 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
         
-        # Wait for the client to provide more context if the message seems incomplete
         if self.session_data['messages_count'] > 0 and user_message:
-            # Check if the message contains enough context, else ask for more details
-            if len(user_message.split()) < 10:  # Example condition to ask for more context
-                response_text = "I hear that you're feeling this way. Could you tell me more about the situations or experiences that have led you to feel this way?"
+            if len(user_message.split()) < 10:  
+                response_text = (
+                    "I hear that you're feeling this way. Could you tell me more about the situations or experiences "
+                    "that have led you to feel this way? What challenges are you facing, and what type of help do you need?"
+                )
                 return {"success": True, "response": {"text": response_text}}
 
         # Use PDF context for further response
@@ -92,7 +93,7 @@ class EmothriveAI:
             )
             response_text = response.choices[0].message.content
 
-            # Ensure the response is within the 40-60 word limit and does not get cut off mid-sentence
+            # No truncation applied here
             response_text = self.prompt_manager.ensure_response_length(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
