@@ -34,7 +34,6 @@ class PromptManager:
         self.conversation_style = conversation_style
 
     def detect_therapy_type(self, user_input: str) -> TherapyType:
-        
         text = user_input.lower()
         if any(k in text for k in ["cognitive behavioral therapy", "cbt"]):
             return TherapyType.CBT
@@ -54,10 +53,7 @@ class PromptManager:
             return TherapyType.TRAUMA
         return self.default_therapy_type
 
-    def generate_system_prompt(self, 
-                               therapy_type: TherapyType,
-                               pdf_context: str = "") -> str:
-    
+    def generate_system_prompt(self, therapy_type: TherapyType, pdf_context: str = "") -> str:
         prompt = f"""
         You are an experienced AI therapist specializing in {therapy_type.value}. 
         Use the following clinical knowledge extracted from documents to inform your responses when relevant:
@@ -66,11 +62,7 @@ class PromptManager:
         """
         return prompt.strip()
 
-    def create_conversation_messages(self, 
-                                     user_input: str,
-                                     pdf_context: str = "",
-                                     conversation_history: List[Dict] = None) -> List[Dict]:
-        # Detect therapy type from user input
+    def create_conversation_messages(self, user_input: str, pdf_context: str = "", conversation_history: List[Dict] = None) -> List[Dict]:
         therapy_type = self.detect_therapy_type(user_input)
         system_prompt = self.generate_system_prompt(therapy_type, pdf_context)
         messages = [{"role": "system", "content": system_prompt}]
