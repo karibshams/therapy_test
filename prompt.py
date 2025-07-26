@@ -34,7 +34,7 @@ class PromptManager:
         self.conversation_style = conversation_style
 
     def detect_therapy_type(self, user_input: str) -> TherapyType:
-        # Automatically detects therapy type from the user's input
+        
         text = user_input.lower()
         if any(k in text for k in ["cognitive behavioral therapy", "cbt"]):
             return TherapyType.CBT
@@ -57,7 +57,7 @@ class PromptManager:
     def generate_system_prompt(self, 
                                therapy_type: TherapyType,
                                pdf_context: str = "") -> str:
-        # Generate system prompt dynamically based on the detected therapy type
+    
         prompt = f"""
         You are an experienced AI therapist specializing in {therapy_type.value}. 
         Use the following clinical knowledge extracted from documents to inform your responses when relevant:
@@ -83,15 +83,4 @@ class PromptManager:
         return messages
 
     def ensure_response_length(self, response: str) -> str:
-        # Split into sentences
-        sentences = re.split(r'(?<=[.!?]) +', response)
-        
-        # If the response is too long, truncate at the sentence level
-        if len(sentences) > 3:  # Adjust this value based on the max sentence limit you'd like
-            response = ' '.join(sentences[:3])  # Keep the first 3 sentences
-        
-        # If the response is still too short, add an informational message
-        elif len(response.split()) < 50:
-            response += " (Response truncated. Please elaborate for a more detailed answer.)"
-        
-        return response
+        return response  
