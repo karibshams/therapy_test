@@ -64,11 +64,23 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
         
+        # Simple inquiries with short responses
+        simple_responses = {
+            "how are you?": "I'm here and ready to help. How are you feeling today?",
+            "please find me a girlfriend": "Building connections takes time, but I'm here to guide you. How do you feel about trying new social activities?",
+            "what kind of therapy do you suggest?": "I recommend Cognitive Behavioral Therapy (CBT) for building confidence. Would you like to learn more?",
+            "hi": "Hello! How can I support you today?"
+        }
+        
+        # Check if the message is simple and provide a short reply
+        if user_message.lower() in simple_responses:
+            return {"success": True, "response": {"text": simple_responses[user_message.lower()]}}
+        
+        # If the message is longer or more complex, ask for more details or provide an expanded answer
         if self.session_data['messages_count'] > 0 and user_message:
-            if len(user_message.split()) < 10:  
+            if len(user_message.split()) < 10:  # Example condition for asking more details
                 response_text = (
-                    "I hear that you're feeling this way. Could you tell me more about the situations or experiences "
-                    "that have led you to feel this way? What challenges are you facing, and what type of help do you need?"
+                    "It sounds like you're going through something important. Could you share more about how you're feeling or what challenges you're facing? I'm here to help."
                 )
                 return {"success": True, "response": {"text": response_text}}
 
@@ -93,8 +105,8 @@ class EmothriveAI:
             )
             response_text = response.choices[0].message.content
 
-            # No truncation applied here
-            response_text = self.prompt_manager.ensure_response_length(response_text)
+            # Apply more natural, supportive, and warmer tone here
+            response_text = self._make_warm_and_supportive(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
             self.conversation_history.append({"role": "assistant", "content": response_text})
@@ -104,9 +116,15 @@ class EmothriveAI:
             logger.error(f"Error during OpenAI API call: {e}")
             return {"success": False, "error": str(e)}
 
-class EmothriveBackendInterface:
-    def __init__(self, ai_engine: EmothriveAI):
-        self.ai_engine = ai_engine
-    
-    async def process_message(self, request_data: Dict) -> Dict:
-        return await self.ai_engine.process_message(request_data)
+    def _make_warm_and_supportive(self, response: str) -> str:
+      
+        response = response.replace("*", "") 
+        response = response.replace("I suggest", "It might be helpful to try")
+        response = response.replace("I recommend", "Perhaps exploring this could be a great step for you")
+        response = response.replace("You should", "It might feel good to")
+
+      
+        if "therapy" in response.lower():
+            response += "\nI'm here to guide you through this process, and you're not alone in it."
+
+        return response
