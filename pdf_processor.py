@@ -21,8 +21,9 @@ class PDFDocument:
     page_count: int
 
 class PDFVectorStore:
-    def __init__(self, folder_path: str = "./pdf/"):
+    def __init__(self, folder_path: str = "./pdf/", vector_store_path: str = "./vector_store/"):
         self.folder_path = folder_path
+        self.vector_store_path = vector_store_path
         self.documents: List[PDFDocument] = []
         self.vector_store: Optional[FAISS] = None
         
@@ -36,6 +37,7 @@ class PDFVectorStore:
         )
         
         os.makedirs(folder_path, exist_ok=True)
+        os.makedirs(vector_store_path, exist_ok=True)
         
     def load_pdf_files(self) -> List[PDFDocument]:
         pdf_files = [f for f in os.listdir(self.folder_path) if f.endswith('.pdf')]
@@ -119,17 +121,18 @@ class PDFVectorStore:
             logger.error(f"Failed to build vector store: {e}")
             raise
 
-    def save_vector_store(self, path: str = "./vector_store/"):
+    def save_vector_store(self, path: str = None):
         try:
+            path = path or self.vector_store_path
             if self.vector_store:
-                os.makedirs(path, exist_ok=True)
                 self.vector_store.save_local(path)
                 logger.info(f"Vector store saved to {path}")
         except Exception as e:
             logger.error(f"Failed to save vector store: {e}")
             raise
 
-    def load_vector_store(self, path: str = "./vector_store/", allow_dangerous_deserialization: bool = False):
+    def load_vector_store(self, path: str = None, allow_dangerous_deserialization: bool = False):
+        path = path or self.vector_store_path
         if os.path.exists(path):
             try:
                 self.vector_store = FAISS.load_local(
