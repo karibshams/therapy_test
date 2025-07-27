@@ -128,3 +128,9 @@ class EmothriveAI:
             response += "\nI'm here to guide you through this process, and you're not alone in it."
 
         return response
+class EmothriveBackendInterface:
+    def __init__(self, ai_engine: EmothriveAI):
+        self.ai_engine = ai_engine
+    
+    async def process_message(self, request_data: Dict) -> Dict:
+        return await self.ai_engine.process_message(request_data)
