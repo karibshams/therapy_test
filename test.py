@@ -3,6 +3,8 @@ import os
 import asyncio
 from datetime import datetime
 from main import EmothriveAI, EmothriveBackendInterface
+from voice_input import VoiceInput
+
 
 st.set_page_config(page_title="Emothrive AI Chat", page_icon="🧠")
 
@@ -37,6 +39,21 @@ def main():
         st.stop()
 
     user_input = st.text_input("Type your message here...", key="chat_input")
+    if st.button("Record Voice"):
+        voice_input = VoiceInput()
+        voice_input.record_audio()
+        transcript = voice_input.transcribe_audio()  # Get the transcript from the audio
+        if transcript:
+            user_input = transcript
+            st.session_state.conversation_history.append({
+                "role": "user",
+                "content": user_input,
+                "timestamp": datetime.now()
+            })
+    
+    
+    
+    
     if user_input:
         st.session_state.conversation_history.append({
             "role": "user",
