@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from pdf_processor import PDFVectorStore
 from prompt import TherapyType, PromptManager, ConversationStyle
-from voice_input import VoiceInput 
+from voice_input import VoiceInput  # Import the VoiceInput class
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -45,7 +45,10 @@ class EmothriveAI:
         
         self._initialize_knowledge_base()
         logger.info(f"EmothriveAI initialized with model: {self.model}")
+        
+        # Instantiate VoiceInput class for recording and transcription
         self.voice_input = VoiceInput()
+
     def _initialize_knowledge_base(self):
         try:
             if not self.pdf_store.load_vector_store(allow_dangerous_deserialization=True):
@@ -64,26 +67,27 @@ class EmothriveAI:
 
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
+
+        # Handle voice input (if applicable)
         if user_message.lower() == "record voice":
             self.voice_input.record_audio()  # Record audio when user requests
             transcript = self.voice_input.transcribe_audio()  # Transcribe the audio
             if transcript:
-                user_message = transcript  # Use the transcribed text as the user message
+                user_message = transcript  # Populate the input box with transcribed text
             else:
                 return {"success": False, "error": "Voice input transcription failed."}
-        
+
+        # Process the message, whether typed or transcribed from voice
         simple_responses = {
             "how are you?": "I'm here and ready to help. How are you feeling today?",
             "please find me a girlfriend": "Building connections takes time, but I'm here to guide you. How do you feel about trying new social activities?",
             "what kind of therapy do you suggest?": "I recommend Cognitive Behavioral Therapy (CBT) for building confidence. Would you like to learn more?",
             "hi": "Hello! How can I support you today?"
         }
-        
-     
+
         if user_message.lower() in simple_responses:
             return {"success": True, "response": {"text": simple_responses[user_message.lower()]}}
         
-      
         if self.session_data['messages_count'] > 0 and user_message:
             if len(user_message.split()) < 10:  
                 response_text = (
@@ -91,7 +95,6 @@ class EmothriveAI:
                 )
                 return {"success": True, "response": {"text": response_text}}
 
-        
         pdf_context = ""
         if self.pdf_store and self.pdf_store.vector_store:
             pdf_context = self.pdf_store.retrieve_pdf_context(user_message)
@@ -111,8 +114,6 @@ class EmothriveAI:
                 max_tokens=450
             )
             response_text = response.choices[0].message.content
-
-           
             response_text = self._make_warm_and_supportive(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
@@ -124,17 +125,16 @@ class EmothriveAI:
             return {"success": False, "error": str(e)}
 
     def _make_warm_and_supportive(self, response: str) -> str:
-      
         response = response.replace("*", "") 
         response = response.replace("I suggest", "It might be helpful to try")
         response = response.replace("I recommend", "Perhaps exploring this could be a great step for you")
         response = response.replace("You should", "It might feel good to")
 
-      
         if "therapy" in response.lower():
             response += "\nI'm here to guide you through this process, and you're not alone in it."
 
         return response
+
 class EmothriveBackendInterface:
     def __init__(self, ai_engine: EmothriveAI):
         self.ai_engine = ai_engine
