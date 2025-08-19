@@ -3,11 +3,11 @@ import os
 import asyncio
 from datetime import datetime
 from main import EmothriveAI, EmothriveBackendInterface
-from voice_input import VoiceInput
+from voice_input import VoiceInput  # Import the VoiceInput class
 
+st.set_page_config(page_title="Emothrive AI Therapist Chat", page_icon="🧠")
 
-st.set_page_config(page_title="Emothrive AI Chat", page_icon="🧠")
-
+# Initialize the AI engine
 def initialize_ai_engine():
     openai_key = os.getenv("OPENAI_API_KEY", "")
     if not openai_key:
@@ -23,10 +23,12 @@ def initialize_ai_engine():
     st.session_state.initialized = True
     return True
 
+# Get AI response
 async def get_ai_response(user_message: str):
     request = {"message": user_message}
     return await st.session_state.backend_interface.process_message(request)
 
+# Main function
 def main():
     st.title("🧠 Emothrive AI Therapist Chat")
 
@@ -38,22 +40,23 @@ def main():
             initialize_ai_engine()
         st.stop()
 
-    user_input = st.text_input("Type your message here...", key="chat_input")
+    # Add a button for voice input and text input field
+    user_input = st.text_input("Type your message here...", key="chat_input", value="", placeholder="Type or speak your message...")
+
+    # Handle Voice Input Button
     if st.button("Record Voice"):
         voice_input = VoiceInput()
-        voice_input.record_audio()
+        voice_input.record_audio()  # Record audio
         transcript = voice_input.transcribe_audio()  # Get the transcript from the audio
         if transcript:
-            user_input = transcript
+            user_input = transcript  # Populate the input box with transcribed text
             st.session_state.conversation_history.append({
                 "role": "user",
                 "content": user_input,
                 "timestamp": datetime.now()
             })
-    
-    
-    
-    
+
+    # Process the input text or voice
     if user_input:
         st.session_state.conversation_history.append({
             "role": "user",
@@ -74,12 +77,12 @@ def main():
                 "timestamp": datetime.now()
             })
 
-        # Display conversation history
-        for msg in st.session_state.conversation_history:
-            if msg["role"] == "user":
-                st.markdown(f"<div style='text-align: right; background:#DCF8C6; padding:10px; margin:5px; border-radius:10px;'>**You:** {msg['content']}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div style='text-align: left; background:#F1F0F0; padding:10px; margin:5px; border-radius:10px;'>**Therapist:** {msg['content']}</div>", unsafe_allow_html=True)
+    # Display conversation history
+    for msg in st.session_state.conversation_history:
+        if msg["role"] == "user":
+            st.markdown(f"<div style='text-align: right; background:#DCF8C6; padding:10px; margin:5px; border-radius:10px;'>**You:** {msg['content']}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div style='text-align: left; background:#F1F0F0; padding:10px; margin:5px; border-radius:10px;'>**Therapist:** {msg['content']}</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
