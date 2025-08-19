@@ -45,7 +45,7 @@ class EmothriveAI:
         
         self._initialize_knowledge_base()
         logger.info(f"EmothriveAI initialized with model: {self.model}")
-
+        self.voice_input = VoiceInput()
     def _initialize_knowledge_base(self):
         try:
             if not self.pdf_store.load_vector_store(allow_dangerous_deserialization=True):
