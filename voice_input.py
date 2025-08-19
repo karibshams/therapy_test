@@ -55,9 +55,12 @@ class VoiceInput:
                 print("Error: Audio file not found.")
                 return None
 
-            # Open the recorded audio file and send it to OpenAI's Whisper API
+            # Open the recorded audio file and send it to OpenAI's Whisper API (Updated Method)
             with open(self.audio_filename, "rb") as audio_file:
-                transcript = openai.Audio.transcribe(model="whisper-1", file=audio_file)
+                transcript = openai.Audio.transcriptions.create(
+                    model="whisper-1",  # Updated method for transcription
+                    file=audio_file
+                )
                 return transcript['text']
         except Exception as e:
             print(f"Error transcribing audio: {e}")
