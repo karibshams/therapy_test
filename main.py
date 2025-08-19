@@ -64,7 +64,13 @@ class EmothriveAI:
 
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
-        
+        if user_message.lower() == "record voice":
+            self.voice_input.record_audio()  # Record audio when user requests
+            transcript = self.voice_input.transcribe_audio()  # Transcribe the audio
+            if transcript:
+                user_message = transcript  # Use the transcribed text as the user message
+            else:
+                return {"success": False, "error": "Voice input transcription failed."}
         
         simple_responses = {
             "how are you?": "I'm here and ready to help. How are you feeling today?",
