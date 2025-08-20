@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from pdf_processor import PDFVectorStore
 from prompt import TherapyType, PromptManager, ConversationStyle
-from voice_input import VoiceInput  # Import the VoiceInput class
+from voice_input import RealTimeVoiceInput   
 
 from dotenv import load_dotenv
 load_dotenv()
