@@ -26,6 +26,11 @@ class ConversationStyle(Enum):
     CURIOUS = "curious"
     SOLUTION_FOCUSED = "solution-focused"
 
+class InputMode(Enum):
+    TEXT = "text"
+    VOICE = "voice"
+    REAL_TIME_VOICE = "real_time_voice"
+    
 class PromptManager:
     def __init__(self, 
                  default_therapy_type: TherapyType = TherapyType.GENERAL,
