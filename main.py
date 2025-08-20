@@ -6,8 +6,8 @@ from datetime import datetime
 from openai import OpenAI
 
 from pdf_processor import PDFVectorStore
-from prompt import TherapyType, PromptManager, ConversationStyle
-from voice_input import RealTimeVoiceInput  
+from prompt import TherapyType, PromptManager, ConversationStyle, InputMode
+from voice_input import RealTimeVoiceInput  # Import the RealTimeVoiceInput class
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -84,7 +84,13 @@ class EmothriveAI:
     async def _process_voice_transcript(self, transcript: str):
         """Process voice transcript automatically"""
         if transcript and len(transcript.strip()) > 0:
-            request_data = {"message": transcript.strip()}
+            # Use voice acknowledgment for very short inputs
+            if len(transcript.split()) < 3:
+                acknowledgment = self.prompt_manager.create_voice_acknowledgment(transcript)
+                logger.info(f"Voice acknowledgment: {acknowledgment}")
+                return {"success": True, "response": {"text": acknowledgment}}
+            
+            request_data = {"message": transcript.strip(), "source": "voice"}
             result = await self.process_message(request_data)
             logger.info(f"Voice response: {result.get('response', {}).get('text', 'No response')}")
             return result
@@ -127,6 +133,11 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
 
+        # Handle voice help command
+        if user_message.lower() in ["voice help", "help voice", "voice commands"]:
+            help_text = self.prompt_manager.get_voice_help_text()
+            return {"success": True, "response": {"text": help_text}}
+
         # Handle voice input commands
         if user_message.lower() == "start voice":
             self.start_real_time_voice()
@@ -168,10 +179,14 @@ class EmothriveAI:
         
         conversation_history = self.conversation_history or []
 
+        # Determine input mode for voice-aware prompting
+        input_mode = InputMode.REAL_TIME_VOICE if hasattr(request_data, 'source') and request_data.get('source') == 'voice' else None
+        
         messages = self.prompt_manager.create_conversation_messages(
             user_input=user_message,
             pdf_context=pdf_context,
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
+            input_mode=input_mode
         )
         
         try:
@@ -181,6 +196,11 @@ class EmothriveAI:
                 max_tokens=450
             )
             response_text = response.choices[0].message.content
+            
+            # Format response for voice output if needed
+            if input_mode and (input_mode.value == 'voice' or input_mode.value == 'real_time_voice'):
+                response_text = self.prompt_manager.format_response_for_voice(response_text, input_mode)
+            
             response_text = self._make_warm_and_supportive(response_text)
 
             self.conversation_history.append({"role": "user", "content": user_message})
