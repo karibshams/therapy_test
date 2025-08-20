@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from pdf_processor import PDFVectorStore
 from prompt import TherapyType, PromptManager, ConversationStyle
-from voice_input import RealTimeVoiceInput   
+from voice_input import RealTimeVoiceInput  
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -46,8 +46,67 @@ class EmothriveAI:
         self._initialize_knowledge_base()
         logger.info(f"EmothriveAI initialized with model: {self.model}")
         
-        # Instantiate VoiceInput class for recording and transcription
-        self.voice_input = VoiceInput()
+        # Initialize RealTimeVoiceInput for continuous voice processing
+        self.real_time_voice = RealTimeVoiceInput()
+        self.current_transcript = ""
+        self.is_voice_active = False
+        
+        # Set up real-time voice callbacks
+        self._setup_voice_callbacks()
+
+    def _setup_voice_callbacks(self):
+        """Setup callbacks for real-time voice input"""
+        def on_transcript_update(transcript: str):
+            self.current_transcript = transcript
+            logger.info(f"Live transcript: {transcript}")
+        
+        def on_final_transcript(transcript: str):
+            self.current_transcript = transcript
+            logger.info(f"Final transcript: {transcript}")
+            # Auto-process the transcript when speech ends
+            asyncio.create_task(self._process_voice_transcript(transcript))
+        
+        def on_recording_start():
+            self.is_voice_active = True
+            logger.info("🎤 Voice recording started...")
+        
+        def on_recording_stop():
+            self.is_voice_active = False
+            logger.info("🎤 Voice recording stopped.")
+        
+        self.real_time_voice.set_callbacks(
+            on_transcript_update=on_transcript_update,
+            on_final_transcript=on_final_transcript,
+            on_recording_start=on_recording_start,
+            on_recording_stop=on_recording_stop
+        )
+
+    async def _process_voice_transcript(self, transcript: str):
+        """Process voice transcript automatically"""
+        if transcript and len(transcript.strip()) > 0:
+            request_data = {"message": transcript.strip()}
+            result = await self.process_message(request_data)
+            logger.info(f"Voice response: {result.get('response', {}).get('text', 'No response')}")
+            return result
+        return None
+
+    def start_real_time_voice(self):
+        """Start real-time voice input"""
+        self.real_time_voice.start_recording()
+        logger.info("Real-time voice input started")
+
+    def stop_real_time_voice(self):
+        """Stop real-time voice input"""
+        self.real_time_voice.stop_recording()
+        logger.info("Real-time voice input stopped")
+
+    def get_current_transcript(self) -> str:
+        """Get the current live transcript"""
+        return self.current_transcript
+
+    def is_voice_recording(self) -> bool:
+        """Check if voice is currently being recorded"""
+        return self.is_voice_active
 
     def _initialize_knowledge_base(self):
         try:
@@ -68,14 +127,22 @@ class EmothriveAI:
     async def process_message(self, request_data: Dict) -> Dict:
         user_message = request_data.get("message", "")
 
-        # Handle voice input (if applicable)
-        if user_message.lower() == "record voice":
-            self.voice_input.record_audio()  # Record audio when user requests
-            transcript = self.voice_input.transcribe_audio()  # Transcribe the audio
-            if transcript:
-                user_message = transcript  # Populate the input box with transcribed text
-            else:
-                return {"success": False, "error": "Voice input transcription failed."}
+        # Handle voice input commands
+        if user_message.lower() == "start voice":
+            self.start_real_time_voice()
+            return {"success": True, "response": {"text": "Real-time voice input started. Speak naturally, and I'll respond when you pause."}}
+        
+        if user_message.lower() == "stop voice":
+            self.stop_real_time_voice()
+            return {"success": True, "response": {"text": "Real-time voice input stopped."}}
+        
+        if user_message.lower() == "voice status":
+            status = "active" if self.is_voice_recording() else "inactive"
+            current_text = self.get_current_transcript()
+            response_text = f"Voice input is {status}."
+            if current_text:
+                response_text += f" Current transcript: '{current_text}'"
+            return {"success": True, "response": {"text": response_text}}
 
         # Process the message, whether typed or transcribed from voice
         simple_responses = {
@@ -135,9 +202,33 @@ class EmothriveAI:
 
         return response
 
+    def cleanup(self):
+        """Clean up voice resources when shutting down"""
+        self.real_time_voice.cleanup()
+        logger.info("EmothriveAI resources cleaned up")
+
 class EmothriveBackendInterface:
     def __init__(self, ai_engine: EmothriveAI):
         self.ai_engine = ai_engine
     
     async def process_message(self, request_data: Dict) -> Dict:
         return await self.ai_engine.process_message(request_data)
+    
+    def start_voice_mode(self):
+        """Start real-time voice input mode"""
+        self.ai_engine.start_real_time_voice()
+    
+    def stop_voice_mode(self):
+        """Stop real-time voice input mode"""
+        self.ai_engine.stop_real_time_voice()
+    
+    def get_voice_status(self) -> Dict:
+        """Get current voice input status"""
+        return {
+            "is_recording": self.ai_engine.is_voice_recording(),
+            "current_transcript": self.ai_engine.get_current_transcript()
+        }
+    
+    def cleanup(self):
+        """Clean up resources"""
+        self.ai_engine.cleanup()
