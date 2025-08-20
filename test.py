@@ -86,8 +86,8 @@ def on_final_transcript(transcript):
             "source": "voice"  # Mark as voice message
         })
         
-        # Process with your existing AI system
-        process_ai_message(transcript)
+        # Process with your existing AI system using voice source
+        process_ai_message(transcript, source="voice")
     
     st.session_state.is_recording = False
     st.session_state.current_transcript = ""
@@ -149,12 +149,15 @@ async def get_ai_response(user_message: str):
     return await st.session_state.backend_interface.process_message(request)
 
 # Process AI message
-def process_ai_message(user_message):
+def process_ai_message(user_message, source="text"):
     """Process message with AI and add response to history"""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        response = loop.run_until_complete(get_ai_response(user_message))
+        
+        # Create request with source information for voice-aware processing
+        request_data = {"message": user_message, "source": source}
+        response = loop.run_until_complete(get_ai_response_with_source(request_data))
 
         if response.get("success"):
             response_text = response["response"]["text"]
@@ -177,6 +180,10 @@ def process_ai_message(user_message):
         })
     finally:
         st.rerun()
+
+# Get AI response with source information
+async def get_ai_response_with_source(request_data: dict):
+    return await st.session_state.backend_interface.process_message(request_data)
 
 # Main function (your original structure + voice integration)
 def main():
@@ -276,7 +283,7 @@ def main():
             "source": "text"
         })
 
-        process_ai_message(user_input)
+        process_ai_message(user_input, source="text")
 
     # Display conversation history (your original display + voice indicators)
     if st.session_state.conversation_history:
