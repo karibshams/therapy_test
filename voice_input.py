@@ -1,5 +1,3 @@
-# voice_input.py - Simple real-time voice input without webrtcvad
-
 import openai
 import os
 import pyaudio
@@ -7,10 +5,15 @@ import wave
 import threading
 import io
 import numpy as np
+import time
 from typing import Optional, Callable
 from dotenv import load_dotenv
+import logging
 
-# Load environment variables
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
