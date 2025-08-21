@@ -59,6 +59,9 @@ class PromptManager:
         Use the following clinical knowledge extracted from documents to inform your responses when relevant:
         {pdf_context}
         Respond with therapeutic insights and techniques, always keeping the user's wellbeing in focus.
+        
+        For voice input, be extra warm and conversational since the user is speaking to you directly.
+        Keep responses natural and flowing for spoken conversation.
         """
         return prompt.strip()
 
@@ -75,4 +78,4 @@ class PromptManager:
         return messages
 
     def ensure_response_length(self, response: str) -> str:
-        return response  
+        return response
