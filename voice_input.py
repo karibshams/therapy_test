@@ -1,5 +1,3 @@
-# voice_input.py - Improved real-time voice input with better STT handling
-
 import openai
 import os
 import pyaudio
