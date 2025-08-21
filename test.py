@@ -80,43 +80,55 @@ def init_session_state():
         'current_transcript': '',
         'conversation_history': [],
         'voice_status': 'ready',
-        'last_update': 0
+        'last_update': 0,
+        'pending_voice_message': None  # New flag for voice messages
     }
     
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
-# Voice callbacks
-def on_transcript_update(transcript):
-    st.session_state.current_transcript = transcript
-    st.session_state.last_update = time.time()
-
+# Voice callback functions - Fixed for Streamlit
 def on_final_transcript(transcript):
-    if transcript.strip():
-        # Add user message
-        st.session_state.conversation_history.append({
-            'role': 'user',
-            'content': transcript,
-            'source': 'voice',
-            'timestamp': datetime.now()
-        })
+    """Called when final transcript is ready - Fixed version"""
+    try:
+        if transcript.strip():
+            # Add user message to session state safely
+            if 'conversation_history' not in st.session_state:
+                st.session_state.conversation_history = []
+                
+            st.session_state.conversation_history.append({
+                "role": "user",
+                "content": transcript,
+                "timestamp": datetime.now(),
+                "source": "voice"
+            })
+            
+            # Set flag to process message in main thread
+            st.session_state.pending_voice_message = transcript
+            
+        # Reset voice state
+        st.session_state.is_recording = False
+        st.session_state.current_transcript = ''
+        st.session_state.voice_status = 'ready'
         
-        # Process with AI
-        process_message_sync(transcript, 'voice')
-    
-    # Reset voice state
-    st.session_state.is_recording = False
-    st.session_state.current_transcript = ''
-    st.session_state.voice_status = 'ready'
-    st.rerun()
+    except Exception as e:
+        print(f"Callback error: {e}")  # Use print instead of st functions
 
 def on_recording_start():
-    st.session_state.is_recording = True
-    st.session_state.voice_status = 'recording'
+    """Called when recording starts - Simplified"""
+    try:
+        st.session_state.is_recording = True
+        st.session_state.voice_status = 'recording'
+    except:
+        pass
 
 def on_recording_stop():
-    st.session_state.voice_status = 'processing'
+    """Called when recording stops - Simplified"""
+    try:
+        st.session_state.voice_status = 'processing'
+    except:
+        pass
 
 # Initialize AI system
 @st.cache_resource
@@ -138,11 +150,10 @@ def init_voice_system():
         try:
             voice_system = RealTimeVoiceInput(
                 silence_threshold=400,
-                silence_duration=2.0,
-                min_audio_length=0.8
+                silence_duration=2.0
             )
+            # Simplified callbacks - only use final transcript
             voice_system.set_callbacks(
-                on_transcript_update=on_transcript_update,
                 on_final_transcript=on_final_transcript,
                 on_recording_start=on_recording_start,
                 on_recording_stop=on_recording_stop
