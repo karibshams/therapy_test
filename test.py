@@ -6,159 +6,141 @@ from main import EmothriveAI, EmothriveBackendInterface
 from voice_input import RealTimeVoiceInput
 import time
 
+# Page config
 st.set_page_config(
-    page_title="Emothrive AI Therapist Chat", 
+    page_title="Emothrive AI Test", 
     page_icon="🧠",
     layout="wide"
 )
 
-# Custom CSS for better UI
+# Custom CSS
 st.markdown("""
 <style>
-.voice-indicator {
+.voice-recording {
     background-color: #ff4b4b;
     color: white;
     padding: 10px;
     border-radius: 10px;
     text-align: center;
-    margin: 10px 0;
-    animation: pulse 2s infinite;
+    animation: pulse 1.5s infinite;
+}
+
+.voice-processing {
+    background-color: #ffa500;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.voice-ready {
+    background-color: #00d4aa;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
 }
 
 @keyframes pulse {
     0% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.6; }
     100% { opacity: 1; }
 }
 
-.voice-status {
-    background-color: #00d4aa;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    margin: 5px 0;
-}
-
-.transcript-box {
-    background-color: #f0f2f6;
-    padding: 10px;
-    border-radius: 5px;
-    border-left: 4px solid #ff4b4b;
-    margin: 10px 0;
-    min-height: 50px;
-}
-
 .chat-message {
-    padding: 10px;
-    margin: 5px 0;
+    padding: 15px;
+    margin: 10px 0;
     border-radius: 10px;
+    border-left: 4px solid;
 }
 
 .user-message {
     background-color: #e3f2fd;
-    margin-left: 20px;
+    border-left-color: #2196f3;
 }
 
 .assistant-message {
     background-color: #f3e5f5;
-    margin-right: 20px;
+    border-left-color: #9c27b0;
 }
 
 .voice-message {
-    border-left: 4px solid #ff4b4b;
+    border-left-color: #ff4b4b !important;
+    background-color: #fff3e0;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
-if "initialized" not in st.session_state:
-    st.session_state.initialized = False
-if "conversation_history" not in st.session_state:
-    st.session_state.conversation_history = []
-if "is_recording" not in st.session_state:
-    st.session_state.is_recording = False
-if "current_transcript" not in st.session_state:
-    st.session_state.current_transcript = ""
-if "voice_system" not in st.session_state:
-    st.session_state.voice_system = None
-if "voice_error" not in st.session_state:
-    st.session_state.voice_error = None
-if "processing_voice" not in st.session_state:
-    st.session_state.processing_voice = False
-if "last_transcript_update" not in st.session_state:
-    st.session_state.last_transcript_update = 0
+def init_session_state():
+    defaults = {
+        'ai_initialized': False,
+        'voice_system': None,
+        'is_recording': False,
+        'current_transcript': '',
+        'conversation_history': [],
+        'voice_status': 'ready',
+        'last_update': 0
+    }
+    
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-# Voice callback functions
+# Voice callbacks
 def on_transcript_update(transcript):
-    """Called when transcript is updated in real-time"""
     st.session_state.current_transcript = transcript
-    st.session_state.last_transcript_update = time.time()
-    # Force UI update
-    if hasattr(st.session_state, '_transcript_placeholder'):
-        st.session_state._transcript_placeholder.text_input(
-            "🎤 Live Transcript", 
-            value=transcript, 
-            key=f"transcript_{st.session_state.last_transcript_update}",
-            disabled=True
-        )
+    st.session_state.last_update = time.time()
 
 def on_final_transcript(transcript):
-    """Called when final transcript is ready"""
-    st.session_state.processing_voice = True
-    
     if transcript.strip():
-        # Add user message to history
+        # Add user message
         st.session_state.conversation_history.append({
-            "role": "user",
-            "content": transcript,
-            "timestamp": datetime.now(),
-            "source": "voice"
+            'role': 'user',
+            'content': transcript,
+            'source': 'voice',
+            'timestamp': datetime.now()
         })
         
         # Process with AI
-        process_ai_message(transcript, source="voice")
+        process_message_sync(transcript, 'voice')
     
-    # Reset states
+    # Reset voice state
     st.session_state.is_recording = False
-    st.session_state.current_transcript = ""
-    st.session_state.processing_voice = False
-    
-    # Force rerun
+    st.session_state.current_transcript = ''
+    st.session_state.voice_status = 'ready'
     st.rerun()
 
 def on_recording_start():
-    """Called when recording starts"""
     st.session_state.is_recording = True
-    st.session_state.current_transcript = ""
-    st.session_state.processing_voice = False
+    st.session_state.voice_status = 'recording'
 
 def on_recording_stop():
-    """Called when recording stops"""
-    st.session_state.is_recording = False
+    st.session_state.voice_status = 'processing'
 
-# Initialize AI engine
+# Initialize AI system
 @st.cache_resource
-def initialize_ai_engine():
-    """Initialize AI engine (cached to prevent reinitialization)"""
-    openai_key = os.getenv("OPENAI_API_KEY", "")
+def init_ai_system():
+    openai_key = os.getenv("OPENAI_API_KEY")
     if not openai_key:
-        st.error("OpenAI API Key missing. Please set in .env file or environment variable.")
-        return None, None
+        return None, "OpenAI API Key not found. Please set OPENAI_API_KEY in your environment."
     
     try:
         ai_engine = EmothriveAI(openai_api_key=openai_key)
-        backend = EmothriveBackendInterface(ai_engine=ai_engine)
-        return ai_engine, backend
+        backend = EmothriveBackendInterface(ai_engine)
+        return (ai_engine, backend), None
     except Exception as e:
-        st.error(f"Failed to initialize AI engine: {e}")
-        return None, None
+        return None, f"Failed to initialize AI: {str(e)}"
 
-def initialize_voice_system():
-    """Initialize voice system with callbacks"""
-    try:
-        if st.session_state.voice_system is None:
-            voice_system = RealTimeVoiceInput()
+# Initialize voice system
+def init_voice_system():
+    if st.session_state.voice_system is None:
+        try:
+            voice_system = RealTimeVoiceInput(
+                silence_threshold=400,
+                silence_duration=2.0,
+                min_audio_length=0.8
+            )
             voice_system.set_callbacks(
                 on_transcript_update=on_transcript_update,
                 on_final_transcript=on_final_transcript,
@@ -166,215 +148,220 @@ def initialize_voice_system():
                 on_recording_stop=on_recording_stop
             )
             st.session_state.voice_system = voice_system
-            st.session_state.voice_error = None
-            return True
-    except Exception as e:
-        st.session_state.voice_error = str(e)
-        st.session_state.voice_system = None
-        st.error(f"Voice system initialization failed: {e}")
-        return False
+            return True, None
+        except Exception as e:
+            return False, str(e)
+    return True, None
 
-# Process AI message
-async def get_ai_response(user_message: str, source="text"):
-    """Get AI response"""
-    request = {"message": user_message, "source": source}
-    ai_engine, backend = initialize_ai_engine()
-    if backend:
-        return await backend.process_message(request)
-    return {"success": False, "error": "AI engine not initialized"}
-
-def process_ai_message(user_message, source="text"):
-    """Process message with AI and add response to history"""
+# Process message synchronously
+def process_message_sync(message, source='text'):
     try:
-        # Create new event loop for async call
+        # Get AI system
+        ai_data, error = init_ai_system()
+        if error:
+            st.error(error)
+            return
+        
+        ai_engine, backend = ai_data
+        
+        # Create event loop for async call
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
         try:
-            response = loop.run_until_complete(get_ai_response(user_message, source))
+            # Process message
+            request = {'message': message, 'source': source}
+            response = loop.run_until_complete(backend.process_message(request))
             
-            if response.get("success"):
-                response_text = response["response"]["text"]
+            if response.get('success'):
+                ai_response = response['response']['text']
                 st.session_state.conversation_history.append({
-                    "role": "assistant",
-                    "content": response_text,
-                    "timestamp": datetime.now(),
-                    "source": "ai"
+                    'role': 'assistant',
+                    'content': ai_response,
+                    'source': 'ai',
+                    'timestamp': datetime.now(),
+                    'therapy_type': response['response'].get('therapy_type', 'General')
                 })
-                
-                # Show success message for voice input
-                if source == "voice":
-                    st.success("✅ Voice message processed successfully!")
-                    
             else:
-                error_msg = f"I'm sorry, I encountered an error: {response.get('error', 'Unknown error')}"
+                error_msg = f"Error: {response.get('error', 'Unknown error')}"
                 st.session_state.conversation_history.append({
-                    "role": "assistant", 
-                    "content": error_msg,
-                    "timestamp": datetime.now(),
-                    "source": "ai"
+                    'role': 'assistant',
+                    'content': error_msg,
+                    'source': 'ai',
+                    'timestamp': datetime.now()
                 })
         finally:
             loop.close()
             
     except Exception as e:
-        error_msg = f"I'm sorry, I encountered an error processing your message: {str(e)}"
-        st.session_state.conversation_history.append({
-            "role": "assistant",
-            "content": error_msg,
-            "timestamp": datetime.now(),
-            "source": "ai"
-        })
         st.error(f"Processing error: {str(e)}")
 
-def display_conversation():
-    """Display conversation history"""
-    st.subheader("💬 Conversation History")
-    
-    if not st.session_state.conversation_history:
-        st.info("Start a conversation by typing or speaking...")
-        return
-    
-    for i, message in enumerate(st.session_state.conversation_history):
-        timestamp = message.get('timestamp', datetime.now()).strftime("%H:%M:%S")
-        source = message.get('source', 'text')
-        
-        if message["role"] == "user":
-            source_icon = "🎤" if source == "voice" else "💬"
-            class_name = "chat-message user-message voice-message" if source == "voice" else "chat-message user-message"
-            st.markdown(f"""
-            <div class="{class_name}">
-                <strong>{source_icon} You ({timestamp}):</strong><br>
-                {message["content"]}
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="chat-message assistant-message">
-                <strong>🧠 Therapist ({timestamp}):</strong><br>
-                {message["content"]}
-            </div>
-            """, unsafe_allow_html=True)
-
+# Main app
 def main():
-    st.title("🧠 Emothrive AI Therapist Chat")
+    init_session_state()
+    
+    st.title("🧠 Emothrive AI - Test Interface")
+    st.markdown("*Simple testing interface for AI therapy chatbot with voice input*")
     
     # Initialize systems
-    ai_engine, backend = initialize_ai_engine()
-    
-    if ai_engine is None or backend is None:
-        st.error("Failed to initialize AI system. Please check your OpenAI API key.")
+    ai_data, ai_error = init_ai_system()
+    if ai_error:
+        st.error(ai_error)
         st.stop()
     
-    # Store in session state
-    if not st.session_state.initialized:
-        st.session_state.ai_engine = ai_engine
-        st.session_state.backend_interface = backend
-        st.session_state.initialized = True
-        
-        # Initialize voice system
-        if initialize_voice_system():
-            st.success("✅ AI Engine and Voice System initialized successfully!")
-        else:
-            st.warning("⚠️ AI Engine initialized, but voice system failed. Text input only.")
+    voice_success, voice_error = init_voice_system()
     
-    # Voice Control Section
-    st.markdown("---")
-    col1, col2, col3 = st.columns([2, 2, 1])
+    # Controls section
+    st.markdown("## 🎛️ Controls")
+    
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.session_state.voice_system:
-            if st.button("🎤 Start Voice Recording" if not st.session_state.is_recording else "🛑 Stop Voice Recording", 
-                        type="primary" if not st.session_state.is_recording else "secondary"):
-                if st.session_state.is_recording:
+        # Voice controls
+        if voice_success:
+            if st.session_state.is_recording:
+                if st.button("🛑 Stop Recording", type="secondary"):
                     st.session_state.voice_system.stop_recording()
-                    st.session_state.is_recording = False
-                else:
+            else:
+                if st.button("🎤 Start Recording", type="primary"):
                     st.session_state.voice_system.start_recording()
         else:
             st.button("🎤 Voice Unavailable", disabled=True)
+            if voice_error:
+                st.caption(f"Error: {voice_error}")
     
     with col2:
-        if st.session_state.voice_error:
-            st.error(f"Voice Error: {st.session_state.voice_error}")
-        elif st.session_state.is_recording:
-            st.markdown('<div class="voice-status">🎤 Recording... Speak now</div>', unsafe_allow_html=True)
-        elif st.session_state.processing_voice:
-            st.markdown('<div class="voice-status">🔄 Processing voice...</div>', unsafe_allow_html=True)
+        # Voice status
+        if st.session_state.voice_status == 'recording':
+            st.markdown('<div class="voice-recording">🎤 Recording... Speak now</div>', unsafe_allow_html=True)
+        elif st.session_state.voice_status == 'processing':
+            st.markdown('<div class="voice-processing">🔄 Processing speech...</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="voice-ready">✅ Voice Ready</div>', unsafe_allow_html=True)
     
     with col3:
         if st.button("🔄 Reset Chat"):
             st.session_state.conversation_history = []
-            st.session_state.current_transcript = ""
+            st.session_state.current_transcript = ''
             st.rerun()
     
-    # Live Transcript Display
-    if st.session_state.is_recording or st.session_state.current_transcript:
-        st.markdown("### 🎤 Live Voice Input")
-        transcript_container = st.container()
-        with transcript_container:
-            if st.session_state.current_transcript:
-                st.markdown(f"""
-                <div class="transcript-box">
-                    <strong>Current Speech:</strong><br>
-                    {st.session_state.current_transcript}
-                </div>
-                """, unsafe_allow_html=True)
-            elif st.session_state.is_recording:
-                st.markdown(f"""
-                <div class="transcript-box">
-                    <strong>Listening...</strong><br>
-                    <em>Start speaking...</em>
-                </div>
-                """, unsafe_allow_html=True)
+    # Live transcript display
+    if st.session_state.current_transcript or st.session_state.is_recording:
+        st.markdown("### 🎤 Live Transcript")
+        if st.session_state.current_transcript:
+            st.info(f"**Current Speech:** {st.session_state.current_transcript}")
+        elif st.session_state.is_recording:
+            st.info("**Listening...** Start speaking...")
     
-    # Text Input Section
-    st.markdown("---")
-    st.markdown("### ✍️ Text Input")
+    # Text input section
+    st.markdown("## ✏️ Text Input")
     
-    col1, col2 = st.columns([5, 1])
-    
-    with col1:
+    with st.form("chat_form", clear_on_submit=True):
         user_input = st.text_input(
-            "Type your message here...",
-            key="chat_input",
-            placeholder="Type your message or use voice input above...",
+            "Type your message:",
+            placeholder="How are you feeling today?",
             disabled=st.session_state.is_recording
         )
-    
-    with col2:
-        send_button = st.button("Send", type="primary", disabled=st.session_state.is_recording)
-    
-    # Process text input
-    if (send_button or user_input) and user_input and not st.session_state.is_recording:
-        # Add to conversation history
-        st.session_state.conversation_history.append({
-            "role": "user",
-            "content": user_input,
-            "timestamp": datetime.now(),
-            "source": "text"
-        })
+        submitted = st.form_submit_button("Send", disabled=st.session_state.is_recording)
         
-        # Process with AI
-        with st.spinner("🤔 Thinking..."):
-            process_ai_message(user_input, source="text")
-        
-        # Clear input and rerun
-        st.session_state.chat_input = ""
-        st.rerun()
+        if submitted and user_input.strip():
+            # Add user message
+            st.session_state.conversation_history.append({
+                'role': 'user',
+                'content': user_input,
+                'source': 'text',
+                'timestamp': datetime.now()
+            })
+            
+            # Process with AI
+            with st.spinner("🤔 AI is thinking..."):
+                process_message_sync(user_input, 'text')
+            
+            st.rerun()
     
-    # Display conversation
-    st.markdown("---")
-    display_conversation()
+    # Conversation display
+    st.markdown("## 💬 Conversation")
+    
+    if not st.session_state.conversation_history:
+        st.info("👋 Start a conversation by typing a message or using voice input above!")
+        st.markdown("**Suggestions:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("😟 I'm feeling anxious"):
+                st.session_state.conversation_history.append({
+                    'role': 'user', 'content': "I'm feeling anxious",
+                    'source': 'text', 'timestamp': datetime.now()
+                })
+                process_message_sync("I'm feeling anxious", 'text')
+                st.rerun()
+        with col2:
+            if st.button("💭 I need someone to talk to"):
+                st.session_state.conversation_history.append({
+                    'role': 'user', 'content': "I need someone to talk to",
+                    'source': 'text', 'timestamp': datetime.now()
+                })
+                process_message_sync("I need someone to talk to", 'text')
+                st.rerun()
+    else:
+        # Display conversation history
+        for i, message in enumerate(st.session_state.conversation_history):
+            timestamp = message.get('timestamp', datetime.now()).strftime("%H:%M:%S")
+            source = message.get('source', 'text')
+            
+            if message['role'] == 'user':
+                source_icon = "🎤" if source == 'voice' else "💬"
+                css_class = "chat-message user-message voice-message" if source == 'voice' else "chat-message user-message"
+                
+                st.markdown(f"""
+                <div class="{css_class}">
+                    <strong>{source_icon} You ({timestamp}):</strong><br>
+                    {message['content']}
+                </div>
+                """, unsafe_allow_html=True)
+                
+            else:  # assistant
+                therapy_type = message.get('therapy_type', '')
+                therapy_info = f" | {therapy_type}" if therapy_type else ""
+                
+                st.markdown(f"""
+                <div class="chat-message assistant-message">
+                    <strong>🧠 AI Therapist ({timestamp}{therapy_info}):</strong><br>
+                    {message['content']}
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Debug info (collapsible)
+    with st.expander("🔧 Debug Info"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Session State:**")
+            st.json({
+                'ai_initialized': st.session_state.ai_initialized,
+                'is_recording': st.session_state.is_recording,
+                'voice_status': st.session_state.voice_status,
+                'messages_count': len(st.session_state.conversation_history),
+                'current_transcript_length': len(st.session_state.current_transcript)
+            })
+        
+        with col2:
+            st.write("**Voice System:**")
+            if st.session_state.voice_system:
+                status = st.session_state.voice_system.get_status()
+                st.json(status)
+            else:
+                st.write("Voice system not initialized")
     
     # Auto-refresh for voice updates
     if st.session_state.is_recording:
-        time.sleep(0.5)
+        time.sleep(0.3)
         st.rerun()
 
 if __name__ == "__main__":
     try:
         main()
+    except KeyboardInterrupt:
+        st.write("Application stopped")
     except Exception as e:
         st.error(f"Application error: {str(e)}")
         st.exception(e)
