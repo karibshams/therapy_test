@@ -25,7 +25,7 @@ if "voice_error" not in st.session_state:
 def on_transcript_update(transcript):
     """Called when transcript is updated in real-time"""
     st.session_state.current_transcript = transcript
-    st.experimental_rerun()  # Trigger UI update
+    st.rerun()  # Trigger UI update
 
 def on_final_transcript(transcript):
     """Called when final transcript is ready"""
@@ -39,16 +39,16 @@ def on_final_transcript(transcript):
         process_ai_message(transcript, source="voice")
     st.session_state.is_recording = False
     st.session_state.current_transcript = ""
-    st.experimental_rerun()
+    st.rerun()
 
 def on_recording_start():
     st.session_state.is_recording = True
     st.session_state.current_transcript = ""
-    st.experimental_rerun()
+    st.rerun()
 
 def on_recording_stop():
     st.session_state.is_recording = False
-    st.experimental_rerun()
+    st.rerun()
 
 # Initialize AI engine
 def initialize_ai_engine():
@@ -122,7 +122,7 @@ def process_ai_message(user_message, source="text"):
             "timestamp": datetime.now()
         })
     finally:
-        st.experimental_rerun()
+        st.rerun()
 
 # Main function
 def main():
