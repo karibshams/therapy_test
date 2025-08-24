@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-class VoiceChatbot:
+class VoiceInput:
     def __init__(self):
         """Initialize the voice chatbot with OpenAI client and audio settings."""
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
