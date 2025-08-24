@@ -21,7 +21,7 @@ class EmothriveAI:
         openai_api_key: str,
         pdf_folder: str = './pdf/',
         default_therapy_type: TherapyType = TherapyType.GENERAL,
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-4.1-mini",
         enable_crisis_detection: bool = True,
         enable_voice_input: bool = True
     ):
