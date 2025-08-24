@@ -17,7 +17,7 @@ class VoiceInput:
         """Initialize the voice chatbot with OpenAI client and audio settings."""
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.stt_model = os.getenv('STT_MODEL', 'whisper-1')
-        self.chat_model = os.getenv('CHAT_MODEL', 'gpt-4o-mini')
+        
         
         # Audio settings
         self.sample_rate = 44100
@@ -28,11 +28,10 @@ class VoiceInput:
         # Recording state
         self.is_recording = False
         self.audio_buffer = []
-        self.conversation_history = []
+       
         
         print("🎤 Voice Chatbot initialized!")
         print(f"Using STT model: {self.stt_model}")
-        print(f"Using Chat model: {self.chat_model}")
         print("\nInstructions:")
         print("- Press ENTER to start recording")
         print("- Press ENTER again to stop recording and get response")
@@ -53,7 +52,7 @@ class VoiceInput:
         with sd.InputStream(callback=self.audio_callback, 
                           samplerate=self.sample_rate, 
                           channels=self.channels):
-            input()  # Wait for user to press ENTER
+            input()  
         
         self.is_recording = False
         print("⏹️ Recording stopped")
@@ -94,44 +93,19 @@ class VoiceInput:
             print(f"❌ Speech-to-text error: {e}")
             return None
 
-    def get_chat_response(self, text: str) -> Optional[str]:
-        """Get chatbot response using GPT."""
-        try:
-            # Add user message to conversation history
-            self.conversation_history.append({"role": "user", "content": text})
-            
-            print("🤖 Generating response...")
-            response = self.client.chat.completions.create(
-                model=self.chat_model,
-                messages=self.conversation_history,
-                max_tokens=500,
-                temperature=0.7
-            )
-            
-            assistant_message = response.choices[0].message.content
-            
-            # Add assistant response to conversation history
-            self.conversation_history.append({"role": "assistant", "content": assistant_message})
-            
-            return assistant_message
-            
-        except Exception as e:
-            print(f"❌ Chat response error: {e}")
-            return None
-
-    def process_voice_input(self):
-        """Process recorded voice input and get chatbot response."""
+    def get_voice_input(self) -> Optional[str]:
+        """Record voice input and convert to text."""
         if not self.audio_buffer:
             print("❌ No audio recorded")
-            return
+            return None
         
         # Check if recording is long enough
         recording_duration = len(self.audio_buffer) / self.sample_rate
         if recording_duration < self.min_recording_duration:
             print(f"❌ Recording too short ({recording_duration:.1f}s). Minimum is {self.min_recording_duration}s")
-            return
+            return None
         
-        print(f"📊 Processing {recording_duration:.1f} seconds of audio...")
+        print(f"🔊 Processing {recording_duration:.1f} seconds of audio...")
         
         # Convert audio to bytes
         audio_array = np.array(self.audio_buffer, dtype=np.float32)
@@ -141,53 +115,12 @@ class VoiceInput:
         transcribed_text = self.speech_to_text(audio_bytes)
         if not transcribed_text:
             print("❌ Could not transcribe audio")
-            return
+            return None
         
-        print(f"📝 You said: \"{transcribed_text}\"")
-        
-        # Get chatbot response
-        response = self.get_chat_response(transcribed_text)
-        if response:
-            print(f"💬 Bot response: {response}")
-        else:
-            print("❌ Could not generate response")
-        
-        print("-" * 50)
+        print(f"📋 You said: \"{transcribed_text}\"")
+        return transcribed_text
 
-    def run(self):
-        """Main loop for the voice chatbot."""
-        try:
-            while True:
-                user_input = input("\nPress ENTER to record (or type 'quit' to exit): ").strip().lower()
-                
-                if user_input == 'quit':
-                    print("👋 Goodbye!")
-                    break
-                
-                if user_input == '':
-                    # Start recording
-                    self.start_recording()
-                    # Process the recorded audio
-                    self.process_voice_input()
-                else:
-                    print("Invalid input. Press ENTER to record or type 'quit' to exit.")
-                    
-        except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
-        except Exception as e:
-            print(f"❌ Unexpected error: {e}")
-
-def main():
-    """Main function to run the voice chatbot."""
-    # Check if required environment variables are set
-    if not os.getenv('OPENAI_API_KEY'):
-        print("❌ Error: OPENAI_API_KEY not found in environment variables")
-        print("Please set your OpenAI API key in the .env file")
-        return
-    
-    # Create and run the chatbot
-    chatbot = VoiceChatbot()
-    chatbot.run()
-
-if __name__ == "__main__":
-    main()
+    def record_and_transcribe(self) -> Optional[str]:
+        """Complete workflow: record audio and return transcribed text."""
+        self.start_recording()
+        return self.get_voice_input()
