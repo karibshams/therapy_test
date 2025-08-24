@@ -23,7 +23,7 @@ class EmothriveAI:
         default_therapy_type: TherapyType = TherapyType.GENERAL,
         model: str = "gpt-4.1-mini",
         enable_crisis_detection: bool = True,
-        enable_voice_input: bool = True
+        enable_voice: bool = False
     ):
         self.client = OpenAI(api_key=openai_api_key)
         
