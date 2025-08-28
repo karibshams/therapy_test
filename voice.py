@@ -124,3 +124,8 @@ class VoiceInput:
         """Complete workflow: record audio and return transcribed text."""
         self.start_recording()
         return self.get_voice_input()
+    # In voice.py, add noise reduction and better audio validation
+    def validate_audio_quality(self, audio_data: np.ndarray) -> bool:
+        """Check if audio has sufficient signal."""
+        rms = np.sqrt(np.mean(audio_data ** 2))
+        return rms > 0.01  # Adjust threshold as needed
