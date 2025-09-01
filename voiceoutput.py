@@ -16,14 +16,9 @@ class VoiceProfile(Enum):
     WARM_MALE = "en-US-GuyNeural"
 
 class SpeechStyle(Enum):
-    """Speech styles for emotional expression"""
     EMPATHETIC = "empathetic"
     FRIENDLY = "friendly"
-    CHEERFUL = "cheerful"
-    SUPPORTIVE = "supportive"
     GENTLE = "gentle"
-    HOPEFUL = "hopeful"
-    SORRY = "sorry"
 
 class VoiceOutput:
     def __init__(
@@ -73,7 +68,9 @@ class VoiceOutput:
     
     async def speak(self, text: str, emotion: Optional[str] = None) -> bool:
         try:
-            style = emotion if emotion in ["empathetic", "friendly", "gentle"] else None
+            # Only use emotion if it's one of the supported styles
+            valid_emotions = ["empathetic", "friendly", "gentle"]
+            style = emotion if emotion in valid_emotions else None
             ssml = self._create_ssml(text, style)
             
             synthesizer = speechsdk.SpeechSynthesizer(self.speech_config, None)
