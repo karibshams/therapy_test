@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from enum import Enum
 import re
 
@@ -53,21 +53,76 @@ class PromptManager:
             return TherapyType.TRAUMA
         return self.default_therapy_type
 
-    def generate_system_prompt(self, therapy_type: TherapyType, pdf_context: str = "") -> str:
-        prompt = f"""
+    def detect_user_mood(self, user_input: str) -> Optional[str]:
+        """Detect user's emotional state for voice adaptation"""
+        text = user_input.lower()
+        
+        mood_indicators = {
+            'sad': ['sad', 'depressed', 'down', 'hopeless', 'cry', 'crying'],
+            'anxious': ['anxious', 'worried', 'nervous', 'panic', 'scared', 'afraid'],
+            'angry': ['angry', 'mad', 'frustrated', 'furious', 'annoyed'],
+            'happy': ['happy', 'good', 'great', 'wonderful', 'excited', 'joy']
+        }
+        
+        for mood, indicators in mood_indicators.items():
+            if any(indicator in text for indicator in indicators):
+                return mood
+        
+        return None
+
+    def detect_gender_context(self, user_input: str) -> Optional[str]:
+        """Detect gender context from user input"""
+        text = user_input.lower()
+        
+        male_indicators = [
+            'i am a man', 'i am a guy', 'i am male', 'as a man', 'as a guy',
+            'i\'m a man', 'i\'m a guy', 'i\'m male'
+        ]
+        female_indicators = [
+            'i am a woman', 'i am a girl', 'i am female', 'as a woman', 'as a girl',
+            'i\'m a woman', 'i\'m a girl', 'i\'m female'
+        ]
+        
+        for indicator in male_indicators:
+            if indicator in text:
+                return 'male'
+        
+        for indicator in female_indicators:
+            if indicator in text:
+                return 'female'
+        
+        return None
+
+    def generate_system_prompt(self, therapy_type: TherapyType, pdf_context: str = "", is_voice_input: bool = False) -> str:
+        base_prompt = f"""
         You are an experienced AI therapist specializing in {therapy_type.value}. 
         Use the following clinical knowledge extracted from documents to inform your responses when relevant:
         {pdf_context}
         Respond with therapeutic insights and techniques, always keeping the user's wellbeing in focus.
-        
-        For voice input, be extra warm and conversational since the user is speaking to you directly.
-        Keep responses natural and flowing for spoken conversation.
         """
-        return prompt.strip()
+        
+        if is_voice_input:
+            voice_addition = """
+        
+        VOICE INTERACTION GUIDELINES:
+        - The user is speaking to you directly, so be extra warm and conversational
+        - Keep responses natural and flowing for spoken conversation
+        - Use shorter sentences that are easier to understand when heard
+        - Add natural conversational markers like "I hear you" or "That makes sense"
+        - Avoid complex terminology that might be hard to follow in audio
+        - Be more empathetic and personal in your tone since voice feels more intimate
+        """
+            base_prompt += voice_addition
+        
+        return base_prompt.strip()
 
-    def create_conversation_messages(self, user_input: str, pdf_context: str = "", conversation_history: List[Dict] = None) -> List[Dict]:
+    def create_conversation_messages(self, 
+                                   user_input: str, 
+                                   pdf_context: str = "", 
+                                   conversation_history: List[Dict] = None,
+                                   is_voice_input: bool = False) -> List[Dict]:
         therapy_type = self.detect_therapy_type(user_input)
-        system_prompt = self.generate_system_prompt(therapy_type, pdf_context)
+        system_prompt = self.generate_system_prompt(therapy_type, pdf_context, is_voice_input)
         messages = [{"role": "system", "content": system_prompt}]
         
         if conversation_history:
@@ -76,6 +131,19 @@ class PromptManager:
         messages.append({"role": "user", "content": user_input})
         
         return messages
+
+    def get_voice_emotion_for_response(self, response_text: str) -> str:
+        """Determine appropriate voice emotion based on response content"""
+        text_lower = response_text.lower()
+        
+        if any(word in text_lower for word in ['sorry', 'difficult', 'hard', 'challenging']):
+            return 'empathetic'
+        elif any(word in text_lower for word in ['great', 'wonderful', 'proud', 'progress']):
+            return 'friendly'
+        elif any(word in text_lower for word in ['calm', 'relax', 'gentle', 'peaceful']):
+            return 'gentle'
+        else:
+            return 'empathetic'
 
     def ensure_response_length(self, response: str) -> str:
         return response
