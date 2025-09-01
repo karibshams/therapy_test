@@ -43,7 +43,8 @@ class EmothriveAI:
             self.voice_input = VoiceInput()
             self.voice_output = VoiceOutput(
                 voice_profile=VoiceProfile.WARM_FEMALE,
-                speech_style=SpeechStyle.EMPATHETIC
+                speech_style=SpeechStyle.EMPATHETIC,
+                rate=0.95
             )
             self.voice_manager = TherapeuticVoiceManager(self.voice_output)
             self.detected_gender = None
@@ -195,7 +196,7 @@ class EmothriveAI:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=350
+                max_tokens=300
             )
             response_text = response.choices[0].message.content
 
