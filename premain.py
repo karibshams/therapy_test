@@ -76,23 +76,6 @@ class EmothriveAI:
             logger.error(f"Error initializing knowledge base: {e}")
             logger.warning("Continuing without PDF knowledge base")
 
-    def _detect_gender_from_text(self, text: str) -> Optional[str]:
-        """Simple gender detection based on text content"""
-        text_lower = text.lower()
-        
-        male_indicators = ['i am a man', 'i am a guy', 'i am male', 'as a man', 'as a guy']
-        female_indicators = ['i am a woman', 'i am a girl', 'i am female', 'as a woman', 'as a girl']
-        
-        for indicator in male_indicators:
-            if indicator in text_lower:
-                return 'male'
-        
-        for indicator in female_indicators:
-            if indicator in text_lower:
-                return 'female'
-        
-        return None
-
     def _update_voice_profile(self, gender: str):
         """Update voice profile based on detected gender"""
         if not self.enable_voice:
@@ -133,12 +116,17 @@ class EmothriveAI:
             else:
                 return {"success": False, "error": "Failed to process voice input"}
         
-        # Gender detection and voice profile adjustment
+        # Use prompt manager for gender detection and mood detection
         if self.enable_voice and not self.detected_gender:
-            detected_gender = self._detect_gender_from_text(user_message)
+            detected_gender = self.prompt_manager.detect_gender_context(user_message)
             if detected_gender:
                 self.detected_gender = detected_gender
                 self._update_voice_profile(detected_gender)
+        
+        # Detect user mood for voice adaptation
+        user_mood = None
+        if self.enable_voice:
+            user_mood = self.prompt_manager.detect_user_mood(user_message)
         
         simple_responses = {
             "how are you?": "I'm here and ready to help. How are you feeling today?",
@@ -154,7 +142,7 @@ class EmothriveAI:
             # Add voice output if enabled
             if self.enable_voice and request_data.get("enable_voice_output", False):
                 try:
-                    await self.voice_manager.respond_with_voice(response_text)
+                    await self.voice_manager.respond_with_voice(response_text, user_mood)
                     result["response"]["has_voice"] = True
                 except Exception as e:
                     logger.error(f"Voice output error: {e}")
@@ -171,7 +159,7 @@ class EmothriveAI:
                 
                 if self.enable_voice and request_data.get("enable_voice_output", False):
                     try:
-                        await self.voice_manager.respond_with_voice(response_text)
+                        await self.voice_manager.respond_with_voice(response_text, user_mood)
                         result["response"]["has_voice"] = True
                     except Exception as e:
                         logger.error(f"Voice output error: {e}")
@@ -189,7 +177,8 @@ class EmothriveAI:
         messages = self.prompt_manager.create_conversation_messages(
             user_input=user_message,
             pdf_context=pdf_context,
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
+            is_voice_input=is_voice_input
         )
         
         try:
@@ -211,7 +200,11 @@ class EmothriveAI:
             # Add voice output if enabled
             if self.enable_voice and request_data.get("enable_voice_output", False):
                 try:
-                    await self.voice_manager.respond_with_voice(response_text)
+                    # Use prompt manager to determine appropriate emotion for response
+                    response_emotion = self.prompt_manager.get_voice_emotion_for_response(response_text)
+                    # Map prompt emotion to voice manager emotion
+                    voice_mood = user_mood if user_mood in ['sad', 'anxious', 'happy'] else None
+                    await self.voice_manager.respond_with_voice(response_text, voice_mood)
                     result["response"]["has_voice"] = True
                 except Exception as e:
                     logger.error(f"Voice output error: {e}")
