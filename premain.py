@@ -195,7 +195,7 @@ class EmothriveAI:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=300
+                max_tokens=350
             )
             response_text = response.choices[0].message.content
 
