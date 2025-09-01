@@ -29,11 +29,12 @@ class SpeechStyle(Enum):
     EMPATHETIC = "empathetic"
     FRIENDLY = "friendly"
     CHEERFUL = "cheerful"
+    SUPPORTIVE = "supportive"
     GENTLE = "gentle"
     HOPEFUL = "hopeful"
     SORRY = "sorry"
-    UNFRIENDLY = "unfriendly"
-    WHISPERING = "whispering"
+    
+    
 
 
 class VoiceOutput:
