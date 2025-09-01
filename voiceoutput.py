@@ -135,7 +135,10 @@ class TherapeuticVoiceManager:
         mood_map = {
             'sad': 'empathetic',
             'anxious': 'gentle',
-            'happy': 'friendly'
+            'happy': 'friendly',
+            'angry': 'supportive',
+            'neutral': 'empathetic' 
+            
         }
         return mood_map.get(mood, 'empathetic')
     
