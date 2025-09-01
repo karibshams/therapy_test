@@ -19,6 +19,10 @@ class SpeechStyle(Enum):
     EMPATHETIC = "empathetic"
     FRIENDLY = "friendly"
     GENTLE = "gentle"
+    CHEERFUL = "cheerful"
+    SUPPORTIVE = "supportive"
+    HOPEFUL = "hopeful"
+    SORRY = "sorry"
 
 class VoiceOutput:
     def __init__(
@@ -69,7 +73,7 @@ class VoiceOutput:
     async def speak(self, text: str, emotion: Optional[str] = None) -> bool:
         try:
             # Only use emotion if it's one of the supported styles
-            valid_emotions = ["empathetic", "friendly", "gentle"]
+            valid_emotions = ["empathetic", "friendly", "gentle", "cheerful", "supportive", "hopeful", "sorry"]
             style = emotion if emotion in valid_emotions else None
             ssml = self._create_ssml(text, style)
             
