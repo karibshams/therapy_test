@@ -16,9 +16,14 @@ class VoiceProfile(Enum):
     WARM_MALE = "en-US-GuyNeural"
 
 class SpeechStyle(Enum):
+    """Speech styles for emotional expression"""
     EMPATHETIC = "empathetic"
     FRIENDLY = "friendly"
+    CHEERFUL = "cheerful"
+    SUPPORTIVE = "supportive"
     GENTLE = "gentle"
+    HOPEFUL = "hopeful"
+    SORRY = "sorry"
 
 class VoiceOutput:
     def __init__(
