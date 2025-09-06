@@ -59,7 +59,8 @@ class VoiceInput:
             response = self.client.audio.transcriptions.create(
                 model=self.stt_model,
                 file=audio_file,
-                response_format="text"
+                response_format="text",
+                language="en"
             )
             
             return response.strip() if response else None
