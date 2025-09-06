@@ -105,12 +105,7 @@ class EmothriveAI:
             else:
                 return {"success": False, "error": "Failed to process voice input"}
         
-        # Use prompt manager for gender detection and mood detection
-        if self.enable_voice and not self.detected_gender:
-            detected_gender = self.prompt_manager.detect_gender_context(user_message)
-            if detected_gender:
-                self.detected_gender = detected_gender
-                self._update_voice_profile(detected_gender)
+        
         
         # Detect user mood for voice adaptation
         user_mood = None
