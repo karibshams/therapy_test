@@ -11,7 +11,7 @@ load_dotenv()
 from finalmain import EmothriveAI
 from prompt import TherapyType, ConversationStyle
 from finalvoice import VoiceInput
-from voiceoutput import VoiceOutput, TherapeuticVoiceManager, VoiceProfile, SpeechStyle
+from voiceoutput import VoiceOutput, TherapeuticVoiceManager, SpeechStyle
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,7 +52,6 @@ class EmothriveAIWithVoice(EmothriveAI):
                 self.voice_output = VoiceOutput(
                     azure_key=azure_tts_key,
                     azure_region=azure_region,
-                    voice_profile=VoiceProfile.WARM_FEMALE,
                     speech_style=SpeechStyle.EMPATHETIC,
                     rate=0.95
                 )
