@@ -70,28 +70,7 @@ class PromptManager:
         
         return None
 
-    def detect_gender_context(self, user_input: str) -> Optional[str]:
-        """Detect gender context from user input"""
-        text = user_input.lower()
-        
-        male_indicators = [
-            'i am a man', 'i am a guy', 'i am male', 'as a man', 'as a guy',
-            'i\'m a man', 'i\'m a guy', 'i\'m male'
-        ]
-        female_indicators = [
-            'i am a woman', 'i am a girl', 'i am female', 'as a woman', 'as a girl',
-            'i\'m a woman', 'i\'m a girl', 'i\'m female'
-        ]
-        
-        for indicator in male_indicators:
-            if indicator in text:
-                return 'male'
-        
-        for indicator in female_indicators:
-            if indicator in text:
-                return 'female'
-        
-        return None
+   
 
     def generate_system_prompt(self, therapy_type: TherapyType, pdf_context: str = "", is_voice_input: bool = False) -> str:
         base_prompt = f"""
