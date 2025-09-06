@@ -8,7 +8,7 @@ from openai import OpenAI
 from pdf_processor import PDFVectorStore
 from prompt import TherapyType, PromptManager, ConversationStyle
 from finalvoice import VoiceInput
-from voiceoutput import VoiceOutput, VoiceProfile, SpeechStyle, TherapeuticVoiceManager
+from voiceoutput import VoiceOutput, SpeechStyle, TherapeuticVoiceManager
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,7 +42,6 @@ class EmothriveAI:
         if self.enable_voice:
             self.voice_input = VoiceInput()
             self.voice_output = VoiceOutput(
-                voice_profile=VoiceProfile.WARM_FEMALE,
                 speech_style=SpeechStyle.EMPATHETIC,
                 rate=0.95
             )
@@ -76,17 +75,7 @@ class EmothriveAI:
             logger.error(f"Error initializing knowledge base: {e}")
             logger.warning("Continuing without PDF knowledge base")
 
-    def _update_voice_profile(self, gender: str):
-        """Update voice profile based on detected gender"""
-        if not self.enable_voice:
-            return
-            
-        if gender == 'male':
-            self.voice_output.set_voice_profile(VoiceProfile.WARM_MALE)
-        elif gender == 'female':
-            self.voice_output.set_voice_profile(VoiceProfile.WARM_FEMALE)
-        
-        logger.info(f"Voice profile updated for {gender} user")
+   
 
     async def process_voice_input(self) -> Optional[str]:
         """Process voice input and return transcribed text"""
