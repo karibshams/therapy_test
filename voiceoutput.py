@@ -142,7 +142,7 @@ class TherapeuticVoiceManager:
         }
         return mood_map.get(mood, 'empathetic')
     
-    def _split_text(self, text: str, max_length: int = 150) -> list:
+    def _split_text(self, text: str, max_length: int = 600) -> list:
         if len(text) <= max_length:
             return [text]
         
