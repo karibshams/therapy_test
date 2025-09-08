@@ -175,8 +175,6 @@ This project is **for educational and supportive purposes only**.
 It is **not a replacement for professional therapy or medical advice**.
 If you are experiencing a crisis, please seek immediate help from a licensed professional or emergency services.
 
----
 
-Would you like me to also create a **`requirements.txt`** (dependencies list) for this code so it’s ready to run without missing packages?
 
 
